@@ -1,0 +1,66 @@
+#starting point
+data = [{"bookName":"my book","tokenList":[0,4,2,1,3,..]},
+		{"bookName":"my book2","tokenList":[2,6,1,11,23,..]},
+		...]
+		token: tokenList[0] 
+
+# alternative
+data = [{"bookName":"my book","tokenList":{"a":0,"the":4,"marelli":2}},
+		{"bookName":"my book2","tokenList":{"a":2,"the":6,"marelli":1}},
+		...]
+#term frequency
+#inverse document frequency
+#TF-iDF (word_i, document_j) = TF_word_i,document_j*log(numDocument/numDocument_word_j)
+
+#TF == BOW
+#iDF
+rdd = sc.parallelize(data)\
+				.flatMap(lambda x: [(x.get("bookName"),k) for k in x.get("tokenList")])
+# ==> rdd = ("my book", 0)
+
+rdd2 = sc.parallelize(data)\
+				.flatMap(lambda x: [(x.get("bookName"),pos,val) 
+											for pos,val in enum(x.get("tokenList"))])
+
+#enum pos,value
+# ==> rdd2.first() : ("my book", 0,0)
+rdd3 = sc.parallelize(data)\
+				.flatMap(lambda x: [(x.get("bookName"),pos,val) 
+											for pos,val in enum(x.get("tokenList"))])\
+					.filter(lambda x: x[2]!=0)
+
+#enum pos,value
+# ==> rdd2.first() : ("my book", 1,4)
+rdd3 = sc.parallelize(data)\
+				.flatMap(lambda x: [(x.get("bookName"),pos,val) 
+								for pos,val in enum(x.get("tokenList")) if val != 0])
+
+
+#TF-iDF (word_i, document_j) = TF_word_i,document_j*log(numDocument/numDocument_word_j)
+#iDF
+numelem = rdd.count()
+iDF = rdd3.map(lambda x: (x[1],1)).reduceByKey(lambda x,y: x+y)\
+					.map(lambda x: {"tokenId":x[0],"iDF":log(numelem/x[1])})
+
+
+#join TF and iDF
+numDocument = 5.000
+"the" ==> numDocument_the == numDocument ==> log(numDocument/numDocument) == log(1) == 0
+"blood" ==> numDcoument_blood == 50 ==> log(5000/50) == log(100) == 0 : 2
+tf_blood_doc5 = 5
+tfIdf(blood,doc5) = 10
+tf:the_doc5 = 1000
+tfIdf(the,doc5) = 0
+
+					
+rdd2 = ["mc_1","press",...]
+
+rdd1.map(lambda x: (x[0],(x[1],x[2]))).join(rdd2)
+
+rdd1.cartesian(rdd2).filter(lambda x: x[0][0] == x[1][0])
+
+rdd2Map = rdd2.collectAsMap()
+#rdd2Map: dict {"mc_1":"press"}
+rdd1.map(lambda x: {"type":rdd2Map.get(x[0]),"mc_id":x[0],"ts":x[1],"cnt":x[2]})
+rdd2MapBC = sc.broadcast(rdd2.collectAsMap())
+rdd1.map(lambda x: {"type":rdd2Map.value.get(x[0]),"mc_id":x[0],"ts":x[1],"cnt":x[2]})
